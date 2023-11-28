@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PSQL_SUPERUSER_ID=postgres
+SUPERUSER=postgres
 DB_SOURCE_PATH="../dataset/db.sql"
-DB_USER=toursuser
-DB_NAME=toursdb
+DB_USER=tours_user
+DB_NAME=tours_db

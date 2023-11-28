@@ -1,33 +1,45 @@
 #!/bin/bash
 
-# ---=== Simple lib to make psql stuff ===---
+# ---=== Simple lib to make psql stuff inside scenario.sh ===---
 
-source "../src/valid.sh"
-source "../src/requests.sh"
 source "../src/config.sh"
 
-PSQL_PREFIX="psql -U $DB_USER -d $DB_NAME"
-
-register_db() {
-    createuser $DB_NAME
-    createdb $DB_USER
-    psql $DB_NAME -c $GRANT_ALL_OWNER
-}
-
-load_db() {
-    $PSQL_PREFIX -f 
-}
-
-unregister_db() {
-    # ! checks for existing db connections
-    dropuser $DB_USER
-    dropdb $DB_NAME
-}
-
 invoke_postgres() {
+    local PSQL_PREFIX="psql -U $SUPERUSER -d $DB_NAME"
     $PSQL_PREFIX $1
 }
 
+register_db() {
+    if psql -lqt | cut -d \| -f 1 | grep -qw $DB_NAME
+    then
+        echo "Database already created"
+    else
+        echo "No database $DB_NAME found, creating new"
+        createdb $DB_NAME
+        load_db
+    fi
+}
+
+load_db() {
+    if [ -f "db.sql" ]
+    then
+        psql -U $SUPERUSER -d $DB_NAME -f db.sql
+        echo "Succesfully imported database in a $DB_NAME"
+    else
+        echo "Some trouble with database initialization: do you provide one?"
+    fi
+}
+
+unregister_db() {
+    dropdb $DB_NAME
+}
+
 peek_tours() {
-    invoke_postgres $(echo 'SELECT * FROM Tours')
+    IFS=$'\n'
+    read -a TOURS -d '' <<< "$(psql -U $SUPERUSER -d $DB_NAME -c 'SELECT * FROM tour;' | tail +3 | sed )"
+    INVOKE_DIALOG="dialog --radiolist 'Select items:' 0 0 0 "
+    for (( i = 0; i < ${#TOURS[@]}; i++ )); do
+        INVOKE_DIALOG=$INVOKE_DIALOG"${TOURS[i]} "
+    done
+    echo $INVOKE_DIALOG
 }
