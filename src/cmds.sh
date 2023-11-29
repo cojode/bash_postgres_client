@@ -35,11 +35,7 @@ unregister_db() {
 }
 
 peek_tours() {
-    IFS=$'\n'
-    read -a TOURS -d '' <<< "$(psql -U $SUPERUSER -d $DB_NAME -c 'SELECT * FROM tour;' | tail +3 | sed )"
-    INVOKE_DIALOG="dialog --radiolist 'Select items:' 0 0 0 "
-    for (( i = 0; i < ${#TOURS[@]}; i++ )); do
-        INVOKE_DIALOG=$INVOKE_DIALOG"${TOURS[i]} "
-    done
-    echo $INVOKE_DIALOG
+    local FEATURES=$(psql -U $SUPERUSER -d $DB_NAME -c 'SELECT * FROM tour;' | tail +2 | awk -v FS="|" '{ gsub(" ", "", $2) } {print v++,$2}' | tr -s '\t' ' ' | head -n -2 | tail +2)
+    arrIN=(${FEATURES//$'\n'/ })
+    dialog --menu "Please choose a tour" 15 55 5 "${arrIN[@]}"
 }
