@@ -6,4 +6,4 @@ cd $HOME
 
 register_db
 load_db
-peek_tours
+peek_menu
